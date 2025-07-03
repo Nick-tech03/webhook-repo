@@ -1,12 +1,12 @@
 from flask import Flask, request, jsonify, render_template
 from pymongo import MongoClient
 from datetime import datetime
-
+import pytz  # ✅ Needed for timezone handling
 
 app = Flask(__name__)
 
-# MongoDB connection
-client = MongoClient("mongodb+srv://Anish1:120308@webhook.ztwnc0n.mongodb.net/?retryWrites=true&w=majority&appName=webhoo")
+# ✅ MongoDB Atlas connection (replace with your actual credentials)
+client = MongoClient("mongodb+srv://Anish1:120308@webhook.ztwnc0n.mongodb.net/?retryWrites=true&w=majority&appName=webhook")
 db = client['webhook_db']
 collection = db['events']
 
@@ -26,15 +26,16 @@ def webhook():
             "author": data['pusher']['name'],
             "to_branch": data['ref'].split('/')[-1],
         })
+
     elif event_type == "pull_request":
         pr = data['pull_request']
         entry.update({
             "author": pr['user']['login'],
             "from_branch": pr['head']['ref'],
             "to_branch": pr['base']['ref'],
+            "merged": pr.get('merged', False)  # ✅ Always present
         })
-        if pr.get('merged'):
-            entry['merged'] = True
+
     else:
         return jsonify({"msg": "Unsupported event"}), 400
 
